@@ -5,35 +5,55 @@ from bs4 import BeautifulSoup
 import pandas as pd
 #import tie
 
-URL = "https://www.indeed.com/jobs?q=data+scientist+%2420%2C000&l=New+York&start=10"
+dataframe = pd.DataFrame()
+counter = 0
+for i in range(1, 5):
+    URL = f'https://www.indeed.com/jobs?q=title%3A%28data+scientist%29&sort=date&limit=50&fromage=1&radius=25&start={counter}'
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.text, "html.parser")
 
-page = requests.get(URL)
+    title = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
+            title.append(a["title"])
 
-soup = BeautifulSoup(page.text,"html.parser")
+    company = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        for span in div.find_all(name="span", attrs={"class": "company"}):
+            company.append(span.get_text())
 
-#print(soup.prettify())
+    location = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        for span in div.find_all(name=["div", "span"], attrs={"class": "location"}):
+            location.append(span.get_text())
 
+    applytype = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        if div.find_all(name="span", attrs={"class": "iaLabel"}):
+            for span in div.find_all(name="span", attrs={"class": "iaLabel"}):
+                applytype.append(span.get_text())
+        else:
+            applytype.append('Standard')
 
-title = []
-for div in soup.find_all(name="div", attrs={"class": "row"}):
-    for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
-        title.append(a["title"])
+    links = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
+            links.append("https://www.indeed.com" + a["href"])
 
-company = []
-for span in soup.find_all(name="span", attrs={"class": "company"}):
-    company.append(span.get_text())
+    date = []
+    for div in soup.find_all(name="div", attrs={"class": "row"}):
+        for span in div.find_all(name="span", attrs={"class": "date"}):
+            date.append(span.get_text())
 
-locations = []
-for data in soup.find_all(name=["div", "span"], attrs={"class": "location"}):
-    locations.append(data.get_text())
+    df = pd.DataFrame(list(zip(title, company, location, date, applytype, links)),
+                      columns=['Title', 'Company', 'Location', 'Posted Date', 'Applytype', 'Links'])
+    dataframe = dataframe.append(df, ignore_index=True)
+    print(URL)
+    counter += 50
 
-applytype = []
-for data in soup.findAll(name=["div", "span"], attrs={"class": "iaLabel"}):
-    applytype.append(data.get_text())
+# print(soup.prettify())
 
-sponsored = []
-for data in soup.findAll(name=["div", "span"], attrs={"class": "sponsoredGray"}):
-    sponsored.append(data.get_text())
+dataframe = dataframe.replace(['\n','\n\n'],'',regex=True)
+dataframe
 
-df = pd.DataFrame(list(zip(title,company,locations,applytype,sponsored)),columns=['title','company','location','applytype','sponsored'])
-df
+dataframe.to_csv('job_data.csv', sep=',')
