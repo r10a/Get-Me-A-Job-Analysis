@@ -1,0 +1,5 @@
+beautifulsoup4==4.6.3
+bottle==0.12.13
+bs4==0.0.1
+pandas==0.23.4
+requests==2.20.0
