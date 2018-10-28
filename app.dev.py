@@ -17,37 +17,25 @@ class Scraper:
             URL = f'https://www.indeed.com/jobs?q=title%3A%28{self.job_title}%29&sort=date&limit=50&fromage=1&radius=25&start={counter}'
             page = requests.get(URL)
             soup = BeautifulSoup(page.text, "html.parser")
-
-            title = []
+            title, company, location, applytype, links, date = [], [], [], [], [], []
             for div in soup.find_all(name="div", attrs={"class": "row"}):
+                # title and links
                 for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
                     title.append(a["title"])
-
-            company = []
-            for div in soup.find_all(name="div", attrs={"class": "row"}):
+                    links.append("https://www.indeed.com" + a["href"])
+                # company
                 for span in div.find_all(name="span", attrs={"class": "company"}):
                     company.append(span.get_text())
-
-            location = []
-            for div in soup.find_all(name="div", attrs={"class": "row"}):
+                # location
                 for span in div.find_all(name=["div", "span"], attrs={"class": "location"}):
                     location.append(span.get_text())
-
-            applytype = []
-            for div in soup.find_all(name="div", attrs={"class": "row"}):
+                # applytype
                 if div.find_all(name="span", attrs={"class": "iaLabel"}):
                     for span in div.find_all(name="span", attrs={"class": "iaLabel"}):
                         applytype.append(span.get_text())
                 else:
                     applytype.append('Standard')
-
-            links = []
-            for div in soup.find_all(name="div", attrs={"class": "row"}):
-                for a in div.find_all(name="a", attrs={"data-tn-element": "jobTitle"}):
-                    links.append("https://www.indeed.com" + a["href"])
-
-            date = []
-            for div in soup.find_all(name="div", attrs={"class": "row"}):
+                # date
                 for span in div.find_all(name="span", attrs={"class": "date"}):
                     date.append(span.get_text())
 
